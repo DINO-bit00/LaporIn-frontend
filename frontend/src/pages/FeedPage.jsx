@@ -17,16 +17,25 @@ const STATUS_COLORS = {
 
 const CATEGORIES = ['Semua', 'Infrastruktur', 'Lingkungan', 'Kesehatan', 'Pendidikan', 'Keamanan', 'Administrasi'];
 
+const STATUS_FILTERS = [
+  { key: 'Semua', label: 'Semua', emoji: '📋' },
+  { key: 'Baru', label: 'Baru', emoji: '📥' },
+  { key: 'Diproses', label: 'Diproses', emoji: '⏳' },
+  { key: 'Selesai', label: 'Selesai', emoji: '✅' },
+  { key: 'Ditolak', label: 'Ditolak', emoji: '❌' },
+];
+
 export default function FeedPage() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('Semua');
+  const [activeStatus, setActiveStatus] = useState('Semua');
   const [selectedReport, setSelectedReport] = useState(null);
 
   useEffect(() => {
     fetchReports();
-  }, [activeFilter]);
+  }, [activeFilter, activeStatus]);
 
   const fetchReports = async () => {
     setLoading(true);
@@ -34,6 +43,7 @@ export default function FeedPage() {
     try {
       const data = await getLaporan({
         kategori: activeFilter === 'Semua' ? 'all' : activeFilter,
+        status: activeStatus === 'Semua' ? 'all' : activeStatus,
       });
       setReports(data.data || []);
     } catch (err) {
@@ -61,7 +71,7 @@ export default function FeedPage() {
         </div>
 
         {/* Category Filter */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-6 hide-scrollbar animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-3 hide-scrollbar animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           {CATEGORIES.map((cat) => (
             <CategoryChip
               key={cat}
@@ -70,6 +80,24 @@ export default function FeedPage() {
               onClick={() => setActiveFilter(cat)}
               showEmoji={cat !== 'Semua'}
             />
+          ))}
+        </div>
+
+        {/* Status Filter */}
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-6 hide-scrollbar animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+          {STATUS_FILTERS.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setActiveStatus(s.key)}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 border ${
+                activeStatus === s.key
+                  ? 'bg-navy-700 text-white border-navy-700 shadow-md shadow-navy-700/20'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-navy-300 hover:text-navy-700'
+              }`}
+            >
+              <span>{s.emoji}</span>
+              {s.label}
+            </button>
           ))}
         </div>
 
@@ -89,7 +117,7 @@ export default function FeedPage() {
         ) : reports.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-4">📭</p>
-            <p className="text-sm text-slate-500">Belum ada laporan{activeFilter !== 'Semua' ? ` di kategori ${activeFilter}` : ''}.</p>
+            <p className="text-sm text-slate-500">Belum ada laporan{activeFilter !== 'Semua' ? ` di kategori ${activeFilter}` : ''}{activeStatus !== 'Semua' ? ` dengan status ${activeStatus}` : ''}.</p>
           </div>
         ) : (
           <div className="space-y-4 stagger-children">
