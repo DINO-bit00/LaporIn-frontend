@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, Send, CheckCircle, Sparkles, Loader2 } from 'lucide-react';
+import { MapPin, Send, CheckCircle, Sparkles, Loader2, Copy, Check } from 'lucide-react';
 import { submitLaporan } from '../services/api';
 
 const MAX_CHARS = 2500;
@@ -10,6 +10,7 @@ export default function LaporPage() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const charCount = form.teks.length;
   const wordCount = form.teks.trim().split(/\s+/).filter(Boolean).length;
@@ -59,6 +60,16 @@ export default function LaporPage() {
     setForm({ nama: '', lokasi: '', teks: '' });
     setResult(null);
     setError('');
+    setCopied(false);
+  };
+
+  const copyId = () => {
+    const id = result?.data?.id;
+    if (id) {
+      navigator.clipboard.writeText(String(id));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const urgencyLabel = (score) => {
@@ -209,8 +220,22 @@ export default function LaporPage() {
               </div>
             )}
 
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-600 mb-6">
-              ID Laporan: <strong className="text-navy-800">#{result.data?.id || '-'}</strong>
+            <div className="bg-gradient-to-r from-navy-50 to-teal-50 border-2 border-dashed border-navy-200 rounded-2xl p-5 mb-6">
+              <p className="text-[10px] font-bold text-navy-500 uppercase tracking-wider mb-2">📌 Simpan ID ini untuk melacak laporan kamu</p>
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-3xl font-black text-navy-800 tracking-wider">#{result.data?.id || '-'}</span>
+                <button
+                  onClick={copyId}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                    copied
+                      ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                      : 'bg-white text-navy-700 border border-navy-200 hover:bg-navy-50 hover:border-navy-300'
+                  }`}
+                >
+                  {copied ? <><Check size={12} /> Tersalin!</> : <><Copy size={12} /> Salin ID</>}
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-2 text-center">Gunakan ID ini di halaman <strong>Laporan</strong> untuk melihat status terkini.</p>
             </div>
 
             <button

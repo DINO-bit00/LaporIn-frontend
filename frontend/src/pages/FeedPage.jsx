@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, MapPin } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { X, MapPin, Search } from 'lucide-react';
 import { getLaporan } from '../services/api';
 import ReportCard from '../components/ReportCard';
 import CategoryChip from '../components/CategoryChip';
@@ -31,11 +31,21 @@ export default function FeedPage() {
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('Semua');
   const [activeStatus, setActiveStatus] = useState('Semua');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [selectedReport, setSelectedReport] = useState(null);
 
   useEffect(() => {
     fetchReports();
-  }, [activeFilter, activeStatus]);
+  }, [activeFilter, activeStatus, searchQuery]);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const fetchReports = async () => {
     setLoading(true);
@@ -44,6 +54,7 @@ export default function FeedPage() {
       const data = await getLaporan({
         kategori: activeFilter === 'Semua' ? 'all' : activeFilter,
         status: activeStatus === 'Semua' ? 'all' : activeStatus,
+        search: searchQuery || undefined,
       });
       setReports(data.data || []);
     } catch (err) {
@@ -51,6 +62,12 @@ export default function FeedPage() {
       setError('Gagal memuat laporan. Pastikan backend berjalan.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      setSearchQuery(searchInput);
     }
   };
 
@@ -83,22 +100,35 @@ export default function FeedPage() {
           ))}
         </div>
 
-        {/* Status Filter */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-6 hide-scrollbar animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
-          {STATUS_FILTERS.map((s) => (
-            <button
-              key={s.key}
-              onClick={() => setActiveStatus(s.key)}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 border ${
-                activeStatus === s.key
-                  ? 'bg-navy-700 text-white border-navy-700 shadow-md shadow-navy-700/20'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-navy-300 hover:text-navy-700'
-              }`}
-            >
-              <span>{s.emoji}</span>
-              {s.label}
-            </button>
-          ))}
+        {/* Status Filter + Search Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-6 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+          <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0 hide-scrollbar shrink-0">
+            {STATUS_FILTERS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setActiveStatus(s.key)}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 border ${
+                  activeStatus === s.key
+                    ? 'bg-navy-700 text-white border-navy-700 shadow-md shadow-navy-700/20'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-navy-300 hover:text-navy-700'
+                }`}
+              >
+                <span>{s.emoji}</span>
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <div className="relative sm:ml-auto w-full sm:w-48">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Cari ID atau teks..."
+              className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-full bg-white outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition-all"
+            />
+          </div>
         </div>
 
         {/* Content */}
